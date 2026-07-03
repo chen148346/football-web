@@ -22,10 +22,11 @@ export async function POST(request) {
 
     for (let i = 0; i < matchIds.length; i++) {
       const mid = matchIds[i];
-      const result = { id: mid, status: '', message: '' };
+      const result = { id: mid, status: '', message: '', report_id: null, file_name: null };
       try {
         let snapshot = await getFulltimeSnapshotCached(mid);
         if (snapshot && snapshot.shijian_json) {
+          // 命中缓存，检查是否已有报告
           result.status = 'success';
           result.message = '命中本地缓存';
           success++;
@@ -75,13 +76,15 @@ export async function POST(request) {
           await updateMatchFulltimeSnapshot(mid, snapshot.id);
 
           const reportResult = await generateReport(matchUpdate, snapshot, detail.shijianJson, detail.analysisJson, 'fulltime');
-          await createReport({
+          const reportRecord = await createReport({
             match_id: mid, snapshot_id: snapshot.id, report_type: 'fulltime',
             file_path: reportResult.storagePath, file_name: reportResult.fileName,
             storage_path: reportResult.storagePath,
           });
           result.status = 'success';
           result.message = `报告已生成: ${reportResult.fileName}`;
+          result.report_id = reportRecord.id;
+          result.file_name = reportResult.fileName;
           success++;
         }
       } catch (e) {

@@ -40,7 +40,10 @@ export default function Home() {
     try {
       const resp = await fetch(`/api/quick-report?id=${matchId}`, { method: 'POST' });
       const data = await resp.json();
-      if (data.success) { alert('报告生成成功: ' + data.fileName); loadMatches(); }
+      if (data.success) {
+        alert(`报告生成成功: ${data.fileName}\n\n下载链接: ${window.location.origin}/api/download-report?id=${data.reportId || ''}\n\n或前往比赛详情页下载。`);
+        loadMatches();
+      }
       else { alert('生成失败: ' + data.error); }
     } catch (e) { alert('请求失败: ' + e.message); }
     finally { setReportLoading(prev => { const n = {...prev}; delete n[matchId]; return n; }); }
@@ -69,7 +72,16 @@ export default function Home() {
       const data = await resp.json();
       if (data.success) {
         const r = data.result;
-        alert(`批量导入完成！\n总计: ${r.total}\n成功: ${r.success}\n不存在: ${r.skipped_not_exist}\n未完场: ${r.skipped_not_finished}\n出错: ${r.skipped_error}`);
+        let msg = `批量导入完成！\n总计: ${r.total}\n成功: ${r.success}\n不存在: ${r.skipped_not_exist}\n未完场: ${r.skipped_not_finished}\n出错: ${r.skipped_error}`;
+        // 列出成功生成的报告及下载链接
+        const successResults = r.results.filter(x => x.status === 'success' && x.report_id);
+        if (successResults.length > 0) {
+          msg += '\n\n成功生成的报告（点击下载）：';
+          successResults.forEach(x => {
+            msg += `\n• ${x.file_name}\n  下载链接: ${window.location.origin}/api/download-report?id=${x.report_id}`;
+          });
+        }
+        alert(msg);
         loadMatches();
       } else { alert('导入失败: ' + data.error); }
     } catch (e) { alert('请求失败: ' + e.message); }

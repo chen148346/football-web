@@ -5,11 +5,16 @@
 import { TITAN007_BASE, getRandomHeaders, REQUEST_TIMEOUT, BEIJING_TZ_OFFSET } from './config.js';
 
 export function nowBeijing() {
+  // 返回一个Date对象，其UTC值代表北京时间
+  // 例如：UTC时间是 2026-07-02 03:00:00，北京时间是 2026-07-02 11:00:00
+  // new Date(Date.now() + 8*3600*1000) 的UTC值就是 2026-07-02 11:00:00
   return new Date(Date.now() + BEIJING_TZ_OFFSET);
 }
 
 export function beijingDateStr() {
-  return nowBeijing().toISOString().slice(0, 10);
+  // 使用getUTC*方法获取北京日期，避免本地时区转换
+  const now = nowBeijing();
+  return `${now.getUTCFullYear()}-${String(now.getUTCMonth() + 1).padStart(2, '0')}-${String(now.getUTCDate()).padStart(2, '0')}`;
 }
 
 let serverTimeCache = { value: null, timestamp: 0 };
@@ -34,7 +39,9 @@ export async function getServerTime() {
       const h = parseInt(clean.slice(8, 10));
       const mi = parseInt(clean.slice(10, 12));
       const s = parseInt(clean.slice(12, 14));
-      const dt = new Date(y, mo, d, h, mi, s);
+      // 使用UTC方法创建Date，因为titan007返回的是北京时间
+      // 我们需要将其作为UTC时间存储，以便与其他使用UTC方法的函数一致
+      const dt = new Date(Date.UTC(y, mo, d, h, mi, s));
       serverTimeCache = { value: dt, timestamp: now };
       return dt;
     }
@@ -51,7 +58,8 @@ export function extractHeadStartTime(html) {
   const parts = m[1].match(/(\d+)\/(\d+)\/(\d+)\s+(\d+):(\d+):(\d+)/);
   if (parts) {
     const [_, y, mo, d, h, mi, s] = parts.map(Number);
-    return new Date(y, mo - 1, d, h, mi, s);
+    // 使用UTC方法创建Date，因为headStartTime是北京时间
+    return new Date(Date.UTC(y, mo - 1, d, h, mi, s));
   }
   return null;
 }
@@ -91,7 +99,8 @@ export function estimateElapsedMin(stateCode, matchTimeStr, serverTime = null) {
   const h = parseInt(matchTimeStr.slice(8, 10));
   const mi = parseInt(matchTimeStr.slice(10, 12));
   const s = parseInt(matchTimeStr.slice(12, 14));
-  const kickoff = new Date(y, mo, d, h, mi, s);
+  // 使用UTC方法创建Date，因为matchTimeStr是北京时间
+  const kickoff = new Date(Date.UTC(y, mo, d, h, mi, s));
   const st = serverTime || nowBeijing();
   const elapsedMin = Math.floor((st - kickoff) / 60000);
   if (stateCode === 1) return Math.max(1, Math.min(elapsedMin, 45));

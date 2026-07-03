@@ -88,11 +88,11 @@ export async function quickReport(matchId) {
   else if (stateCode === 3 && elapsed >= 58) reportType = 'min60';
 
   const result = await generateReport(match, snapshot, detail.shijianJson, detail.analysisJson, reportType);
-  await createReport({
+  const reportRecord = await createReport({
     match_id: matchId, snapshot_id: snapshot.id, report_type: reportType,
     file_path: result.storagePath, file_name: result.fileName, storage_path: result.storagePath,
   });
-  return { fileName: result.fileName, storagePath: result.storagePath, snapshotId: snapshot.id };
+  return { reportId: reportRecord.id, fileName: result.fileName, storagePath: result.storagePath, snapshotId: snapshot.id };
 }
 
 export { generateTeamRecentReports } from './team_report_generator.js';

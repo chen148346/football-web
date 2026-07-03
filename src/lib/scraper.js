@@ -148,10 +148,11 @@ export async function fetchScheduleForDate(dateStr) {
 }
 
 export async function fetchScheduleList() {
-  const beijingNow = nowBeijing();
-  const todayStr = beijingNow.toISOString().slice(0, 10);
-  const yesterday = new Date(beijingNow.getTime() - 24 * 60 * 60 * 1000);
-  const yesterdayStr = yesterday.toISOString().slice(0, 10);
+  // 使用本地时间计算北京日期，避免toISOString()的UTC转换问题
+  const now = new Date(Date.now() + 8 * 60 * 60 * 1000);
+  const todayStr = `${now.getUTCFullYear()}-${String(now.getUTCMonth() + 1).padStart(2, '0')}-${String(now.getUTCDate()).padStart(2, '0')}`;
+  const yesterday = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+  const yesterdayStr = `${yesterday.getUTCFullYear()}-${String(yesterday.getUTCMonth() + 1).padStart(2, '0')}-${String(yesterday.getUTCDate()).padStart(2, '0')}`;
 
   const [todayMatches, yesterdayMatches] = await Promise.all([
     fetchScheduleForDate(todayStr),
